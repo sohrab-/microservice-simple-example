@@ -14,48 +14,48 @@ import org.springframework.stereotype.Component
 @Component
 class RestRoute extends RouteBuilder {
  
- 	@Value('${rest.host}') String host
- 	@Value('${rest.port}') String port
+	@Value('${rest.host}') String host
+	@Value('${rest.port}') String port
 
-    @Override
-    void configure() throws Exception {
-        restConfiguration()
-        	.component('jetty')
-        	.host(host).port(port)
-        	.bindingMode(RestBindingMode.json)
+	@Override
+	void configure() throws Exception {
+		restConfiguration()
+			.component('jetty')
+			.host(host).port(port)
+			.bindingMode(RestBindingMode.json)
 
-        rest('/things')
-        	.post()
-        		.type(Thing)
-        		.to('direct:createThing')
-        	.get()
-        		.outType(ThingSearchResults)
-        		.to('direct:getThings')
-        	.get('/{id}')
-        		.outType(Thing)
-        		.to('direct:getThing')
-        	.delete('/{id}')
-        		.outType(Thing)
-        		.to('direct:removeThing')
+		rest('/things')
+			.post()
+				.type(Thing)
+				.to('direct:createThing')
+			.get()
+				.outType(ThingSearchResults)
+				.to('direct:getThings')
+			.get('/{id}')
+				.outType(Thing)
+				.to('direct:getThing')
+			.delete('/{id}')
+				.outType(Thing)
+				.to('direct:removeThing')
 
-        from('direct:createThing')
-        	.to('jpa:au.com.sixtree.blog.Thing')
+		from('direct:createThing')
+			.to('jpa:au.com.sixtree.blog.Thing')
 
-        from('direct:getThing')
-        	.to('sql:select * from THING where id = :#${header.id}?dataSource=dataSource&outputType=SelectOne')
-        	.beanRef('transformer', 'mapThing')
+		from('direct:getThing')
+			.to('sql:select * from THING where id = :#${header.id}?dataSource=dataSource&outputType=SelectOne')
+			.beanRef('transformer', 'mapThing')
 
-        from('direct:getThings')
-        	.setProperty('query').method('transformer', 'constructQuery(${headers})')
-        	.toD('sql:${property.query}?dataSource=dataSource')
-        	.beanRef('transformer', 'mapThingSearchResults')
+		from('direct:getThings')
+			.setProperty('query').method('transformer', 'constructQuery(${headers})')
+			.toD('sql:${property.query}?dataSource=dataSource')
+			.beanRef('transformer', 'mapThingSearchResults')
 
-        from('direct:removeThing')
-        	.to('direct:getThing')
-        	.setProperty('thing', body())
-        	.to('sql:delete from THING where id = :#${body.id}?dataSource=dataSource')
-        	.setBody(property('thing'))
-    }
+		from('direct:removeThing')
+			.to('direct:getThing')
+			.setProperty('thing', body())
+			.to('sql:delete from THING where id = :#${body.id}?dataSource=dataSource')
+			.setBody(property('thing'))
+	}
 }
 
 @Entity(name = "THING")
@@ -73,11 +73,11 @@ class ThingSearchResults {
 @Component('transformer')
 class Transformer {
 	Thing mapThing(Map map) {
-    	new Thing(id: map.id, name: map.name, owner: map.owner)
-    }
+		new Thing(id: map.id, name: map.name, owner: map.owner)
+	}
 
-    String constructQuery(Map headers) {
-    	def wheres = []
+	String constructQuery(Map headers) {
+		def wheres = []
 		if (headers.name) {
 			wheres << 'name = :#${header.name}'
 		}
@@ -90,19 +90,19 @@ class Transformer {
 			query += ' where ' + wheres.join(' and ')
 		}
 		return query
-    }
+	}
 
-    ThingSearchResults mapThingSearchResults(List<Map> body) {
-    	new ThingSearchResults(
-    		size: body.size,
-    		things: body.collect { mapThing it }
-    	)
-    }
+	ThingSearchResults mapThingSearchResults(List<Map> body) {
+		new ThingSearchResults(
+			size: body.size,
+			things: body.collect { mapThing it }
+		)
+	}
 }
 
 @SpringBootApplication
 class Application {
-    public static void main(String[] args) {
-        SpringApplication.run Application, args
-    }
+	public static void main(String[] args) {
+		SpringApplication.run Application, args
+	}
 }
