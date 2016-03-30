@@ -13,7 +13,7 @@ To run the application through Spring Boot (not Docker):
 
 To build the Docker image for the project:
 
-	$ gradle dockerBuild
+	$ gradle buildDocker
 
 To run the container for the above image:
 
